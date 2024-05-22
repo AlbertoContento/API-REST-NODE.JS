@@ -23,7 +23,7 @@ const  userSchema = new mongoose.Schema({
     virtuals: true,//con esto incluimos los campos virtuales
   }
 });
-//con esto antes de que se salve en nuestra base de datos 
+//con esto antes de que se salve en nuestra base de datos la encriptamos para q ue no se muestre en nuestra BD
 userSchema.pre("save", async function (next) {
   //si el campo password ha sido modificado next
   if (!this.isModified("password")) return next();

@@ -1,4 +1,4 @@
-//importamos la libreria instalada dotenv
+//importamos la libreria instalada dotenv para variables de entorno
 import 'dotenv/config';
 //importamos la app
 import app from './app.js';
