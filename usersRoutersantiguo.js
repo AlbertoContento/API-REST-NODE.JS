@@ -47,32 +47,28 @@ router.post('/signup', async (req, res) => {
         token,
       });
   } catch (error) {
-    res.status(500).send("Something went wrong" + error.message);//500 error de servidor
+    res.status(500).send('Something went wrong');//500 error de servidor
   }
 });
 //POST API/USERS/LOGIN
-router.post("/login", async (req, res) => {
+router.post('/login', async (req, res) => {
   const user = await User.findOne({ email: req.body.email});//buscamos el email en BD
   //Si el email no existe 
   if (!user) return res.status(400).send("Invalid email or Password.");
   //VAlidamos la contraseña
   const validPassword = await bcrypt.compare(req.body.password, user.password);//aqui comparamos la contraseña guardada en BD y la contraseña que nos introduce el user
   //si la contraseña no es valida
-  if (!validPassword) return res.status(400).send("Invalid email or Password.");
+  if (!validPassword) return res.status(400).send("Invalid email or Password");
   //creamos el token
-  const token = jwt.sign(
-    {
-      _id: user._id,
-      role: user.role,
+  const token = jwt.sign({
+    _id: user._id,
+    role: user.role,
     //le pasamos la palabra clave 
-    }, 
-    process.env.JWT_SECRET, 
-    {
-      expiresIn: "1h",//el token para que el usuario realice peticiones al servidor sera de 1 hora
-    }
-  );
+  }, process.env.JWT_SECRET, {
+    expiresIn: '1h',//el token para que el usuario realice peticiones al servidor sera de 1 hora
+  });
   //Cuando el user este bien logeado le devolvemos el token
-  res.status(200).header("Authorization", token).json({ token: token });
+  res.status(200).header("Authorization", token).json({token: token});
 });
 //exportamos el objeto router
 export default router;

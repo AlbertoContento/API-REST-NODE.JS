@@ -1,7 +1,7 @@
 //Importamos base de datos mongoose
 import mongoose from 'mongoose';
 //importamos la version 4 de uuid para generar id
-import {v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 //Creamos el schema de nuestra base de datos
 const  ticketSchema = new mongoose.Schema({
   //type el tipo de dato, y required: que si no esta ese dato no se puede guardar
