@@ -2,42 +2,25 @@ import express from 'express'; // Importamos el módulo express
 import Ticket from '../models/ticket.js'; // Importamos el modelo Ticket
 import auth from '../middlewares/auth.js'; // Importamos el middleware de autenticación
 import admin from '../middlewares/admin.js'; // Importamos el middleware de autorización de administrador
+import buildFilter from '../middlewares/filter.js';//importamos el middelware de filter
+import paginate from "../middlewares/paginate.js";//Importamos el middleware de paginacion
 
 const router = express.Router(); // Creamos una instancia de Router de Express
 
-// Ruta GET para obtener todos los tickets-->GET /api/tickets?pages=1Size=30
-router.get('/', async (req, res) => {
-    // Obtiene el tamaño de la página de la query (parámetro pageSize) y si no está presente, establece el tamaño de la página en 10
-    const pageSize = parseInt(req.query.pageSize) || 10;
-    // Obtiene el número de página de la query (parámetro page) y si no está presente, establece el número de página en 1
-    const page = parseInt(req.query.page) || 1;
-  
-    try {
-      // Buscamos todos los tickets en la base de datos
-      const tickets = await Ticket.find()
-        // Omitimos los registros según el número de página y el tamaño de la página
-        .skip((page - 1) * pageSize)
-        // Limitamos el número de registros devueltos al tamaño de la página
-        .limit(pageSize);
-    
-      // Contamos el número total de documentos (tickets) en la base de datos
-      const total = await Ticket.countDocuments();
-    
-      // Respondemos con los tickets encontrados
-      res.status(200).json({
-        tickets, // Los tickets encontrados en la base de datos
-        page, // El número de la página actual
-        pages: Math.ceil(total / pageSize), // El número total de páginas calculado
-        currentPage: page, // El número de la página actual (redundante con 'page', pero claro para el cliente)
-      });
-    
-  } catch (err) {
-    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
-    res.status(500).send({ message: "Error del servidor: " + err.message });
-  }
+// Ruta GET para obtener todos los tickets
+//GET /api/tickets/
+//GET /api/tickets?pageSize=10&page=1
+//GET /api/tickets?status=open/priority=high
+//GET /api/tickets?search=bug
+//Public
+router.get('/', buildFilter, paginate(Ticket), async (req, res) => {
+  res.status(200).json(req.paginatedResults);
 });
 
-// Ruta POST para crear un nuevo ticket-->POST/api/tickets
+//Create a Ticket
+//POST /api/tickets/
+//Private (only logged in users can create tickets)
+//Ticket Schema: user, title, description priority, status
 router.post('/', auth, async (req, res) => {
   // Creamos un nuevo ticket con los datos del request
   const ticket = new Ticket({
@@ -59,7 +42,9 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Ruta GET para obtener un ticket específico por su ID--> GET api/tickets/:id
+//Get a ticket by id
+//GEt /api/ticket/:id
+//Public
 router.get('/:id', async (req, res) => {
   try {
     // Buscamos el ticket en la base de datos por su ID
@@ -76,7 +61,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Ruta PUT para actualizar un ticket específico por su ID-->PUT /api/tickets/:id
+//PUT /api/tickets/:id
+//update a ticket by uid
+//private(only logged in users can update tickets)
+//Ticket Schema: user, title, description, priority, status
 router.put('/:id', auth, async (req, res) => {
   // Obtenemos las actualizaciones del request
   const updates = req.body;
@@ -95,7 +83,9 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Ruta DELETE para eliminar un ticket específico por su ID-->DELETE /api/tickets/:id
+//Delete a ticket by uid
+//DELETE /api/tickets/:id
+//Private (only ADMIN users, can delete tickets)
 router.delete('/:id', [auth, admin], async (req, res) => {
   try {
     // Buscamos el ticket por su ID y lo eliminamos
