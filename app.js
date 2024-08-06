@@ -1,56 +1,45 @@
-// Importamos la librería instalada dotenv
-import 'dotenv/config';
-// Importamos express de la biblioteca express
-import express from 'express';
-// Importamos librería morgan
-import morgan from 'morgan';
-// Importamos mongoose para conectarnos a nuestra BD
-import mongoose from 'mongoose';
-// Importamos las routes
-import usersRoutes from './routes/usersRoutes.js';
-import ticketRoutes from './routes/ticketRoutes.js';
+import 'dotenv/config'; // Importamos las variables de entorno desde el archivo .env
+import express from 'express'; // Importamos el módulo express para manejar el servidor web
+import morgan from 'morgan'; // Importamos morgan para el registro de solicitudes HTTP
+import mongoose from 'mongoose'; // Importamos mongoose para manejar la base de datos MongoDB
+import usersRoutes from './routes/usersRoutes.js'; // Importamos las rutas para manejar usuarios
+import ticketRoutes from './routes/ticketRoutes.js'; // Importamos las rutas para manejar tickets
 
-// Creamos la app
-const app = express();
+const app = express(); // Creamos una instancia de la aplicación Express
 
-// URL para conexión a la base de datos
+// Determinamos la URL de la base de datos dependiendo del entorno
 const DB_URL = process.env.NODE_ENV === 'test'
-  ? 'mongodb://localhost:27017/ticketing-db-test'
-  : process.env.DB_URL || "mongodb://localhost:27017/ticketing-db";
+  ? 'mongodb://localhost:27017/ticketing-db-test' // URL para la base de datos de prueba
+  : process.env.DB_URL || 'mongodb://localhost:27017/ticketing-db'; // URL para la base de datos principal
 
-// Conectamos la base de datos a nuestra URL mediante una promesa
+// Conectamos a la base de datos MongoDB usando mongoose
 mongoose
   .connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log(`Connected to BD: ${DB_URL}`))
+  .then(() => console.log(`Connected to DB: ${DB_URL}`)) // Si la conexión es exitosa, mostramos un mensaje
   .catch((err) => {
-    console.error("Failed to connect to MongoDB", err);
-    process.exit(1); // Termina el proceso si la conexión falla
+    console.error("Failed to connect to MongoDB", err); // Si ocurre un error, lo mostramos en consola
+    process.exit(1); // Terminamos el proceso con un código de error 1
   });
 
-// Middleware para loguearse
-app.use(morgan("dev")); // Le decimos donde queremos que se ejecute (dev)
+app.use(morgan("dev")); // Usamos morgan para registrar las solicitudes HTTP en modo de desarrollo
+app.use(express.json()); // Usamos express.json() para parsear los cuerpos de las solicitudes en formato JSON
 
-// Middleware para que los datos del usuario se conviertan en datos que el servidor pueda leer
-app.use(express.json());
-
-// Creamos nuestra primera ruta y los verbos utilizados son 4: get (leer datos), post (enviar datos), put (actualizar datos) y delete (borrar)
+// Ruta de prueba para verificar que el servidor está funcionando
 app.get('/ping', (req, res) => {
-  res.status(200).send("pong");
+  res.status(200).send("pong"); // Responde con "pong" cuando se accede a /ping
 });
 
-// IMPORTAMOS LAS ROUTAS para login y signup
-app.use("/api/users", usersRoutes);
-// IMPORTAMOS LAS ROUTAS para ticket
-app.use("/api/tickets", ticketRoutes);
+// Configuramos las rutas para los usuarios y tickets
+app.use("/api/users", usersRoutes); // Las rutas para manejar usuarios se gestionan en /api/users
+app.use("/api/tickets", ticketRoutes); // Las rutas para manejar tickets se gestionan en /api/tickets
 
-// Middleware de manejo de errores
+// Middleware para manejar errores de sintaxis en el JSON del cuerpo de la solicitud
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    console.error('Error de sintaxis en JSON:', err);
-    return res.status(400).send({ status: 400, message: 'JSON inválido' });
+    console.error('Error de sintaxis en JSON:', err); // Mostramos el error de sintaxis en la consola
+    return res.status(400).send({ status: 400, message: 'JSON inválido' }); // Respondemos con un mensaje de error 400
   }
-  next();
+  next(); // Pasamos el control al siguiente middleware si el error no es un error de sintaxis
 });
 
-// Exportamos la app
-export default app;
+export default app; // Exportamos la instancia de la aplicación para usarla en otros archivos

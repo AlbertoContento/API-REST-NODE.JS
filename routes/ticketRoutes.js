@@ -1,76 +1,96 @@
-//Guardamos las routes de los tickets
-//importamos express y ticket.js
-import express from 'express';
-import Ticket from '../models/Ticket.js';
-import auth from '../middlewares/auth.js';
-import admin from '../middlewares/admin.js';
-//Accedemos a express.Router()
-const router = express.Router();
-//Creamos un get que nos devuelve todos los tickets del sistema-->GET/api/ticket
+import express from 'express'; // Importamos el módulo express
+import Ticket from '../models/ticket.js'; // Importamos el modelo Ticket
+import auth from '../middlewares/auth.js'; // Importamos el middleware de autenticación
+import admin from '../middlewares/admin.js'; // Importamos el middleware de autorización de administrador
+
+const router = express.Router(); // Creamos una instancia de Router de Express
+
+// Ruta GET para obtener todos los tickets
 router.get('/', async (req, res) => {
-  try {//busca todos los tickets y los muestra
+  try {
+    // Buscamos todos los tickets en la base de datos
     const tickets = await Ticket.find({});
-    res.status(200).json({ tickets: tickets});
+    // Respondemos con los tickets encontrados
+    res.status(200).json({ tickets });
   } catch (err) {
-    res.status(500).send({ message: "Server Error" + err.message });
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).send({ message: "Error del servidor: " + err.message });
   }
 });
 
-//Creamos un post para crear una nueva ruta-->POST /api/ticket
+// Ruta POST para crear un nuevo ticket-->POST/api/tickets
 router.post('/', auth, async (req, res) => {
-  //Creamos un nuevo ticket
+  // Creamos un nuevo ticket con los datos del request
   const ticket = new Ticket({
-    user: req.user._id,
+    user: req.user._id, // Asignamos el ID del usuario que está autenticado
     status: req.body.status,
     priority: req.body.priority,
     title: req.body.title,
     description: req.body.description,
   });
-  try {//guardamos con mongoose el ticket
+
+  try {
+    // Guardamos el nuevo ticket en la base de datos
     const newTicket = await ticket.save();
+    // Respondemos con el ticket recién creado
     res.status(201).json({ ticket: newTicket });
   } catch (err) {
-    res.status(500).json({ message: "Server Error" + err.message });
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).json({ message: "Error del servidor: " + err.message });
   }
 });
 
-//Creamos un get que nos devuelve el ticket segun el id.(: indica que es dinamico, puede cambiar)--> GET api/tickets/:id
+// Ruta GET para obtener un ticket específico por su ID--> GET api/tickets/:id
 router.get('/:id', async (req, res) => {
-  try {//buacamos ticket por parametro id
-    const ticket = await Ticket.findOne({ id: req.params.id });
-    if (!ticket) {//si no encuentra el ticket
-      return res.status(404).json({ message: "Ticket not found"});
-    }
-    res.status(200).json({ ticket: ticket});
-  } catch (err) {
-    res.status(500).json({ message: "Server Error" + err.message });
-  }
-});
-//Creamos un put a un id para actualizar un ticket en cuestion-->PUT /api/tickets/:id
-router.put('/:id', auth, async (req, res) => {
-  const updates = req.body;//guardamos el cuerpo de la peticion
   try {
-    const ticket = await Ticket.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-    });
+    // Buscamos el ticket en la base de datos por su ID
+    const ticket = await Ticket.findOne({ id: req.params.id });
     if (!ticket) {
-      return res.status(404).json({ message: "Ticket not found" });
+      // Si no se encuentra el ticket, respondemos con un error 404 (No encontrado)
+      return res.status(404).json({ message: "Ticket no encontrado" });
     }
-    res.status(200).json({ ticket: ticket });
+    // Respondemos con el ticket encontrado
+    res.status(200).json({ ticket });
   } catch (err) {
-    res.status(500).json({ message: "Server Error" + err.message });
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).json({ message: "Error del servidor: " + err.message });
   }
 });
-//Creamos un delete que por el id nos permitira borrar ticket del sistema-->DELETE /api/tickets/:id
-router.delete('/:id', [auth,admin], async (req, res) => {
-try {
-  const ticket = await Ticket.findByIdAndDelete(req.params.id);
-  if (!ticket) {
-    return res.status(404).json({ message: "Ticket not found"});
+
+// Ruta PUT para actualizar un ticket específico por su ID-->PUT /api/tickets/:id
+router.put('/:id', auth, async (req, res) => {
+  // Obtenemos las actualizaciones del request
+  const updates = req.body;
+  try {
+    // Buscamos el ticket por su ID y actualizamos con los datos proporcionados
+    const ticket = await Ticket.findOneAndUpdate({ id: req.params.id }, updates, { new: true });
+    if (!ticket) {
+      // Si no se encuentra el ticket, respondemos con un error 404 (No encontrado)
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+    // Respondemos con el ticket actualizado
+    res.status(200).json({ ticket });
+  } catch (err) {
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).json({ message: "Error del servidor: " + err.message });
   }
-  res.status(200).json({ ticket: ticket});
-} catch (err) {
-  res.status(500).json({ message: "Server Error" + err.message })
-}
 });
-export default router;
+
+// Ruta DELETE para eliminar un ticket específico por su ID-->DELETE /api/tickets/:id
+router.delete('/:id', [auth, admin], async (req, res) => {
+  try {
+    // Buscamos el ticket por su ID y lo eliminamos
+    const ticket = await Ticket.findOneAndDelete({ id: req.params.id });
+    if (!ticket) {
+      // Si no se encuentra el ticket, respondemos con un error 404 (No encontrado)
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+    // Respondemos con el ticket eliminado
+    res.status(200).json({ ticket });
+  } catch (err) {
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).json({ message: "Error del servidor: " + err.message });
+  }
+});
+
+export default router; // Exportamos el router para usarlo en otros archivos

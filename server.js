@@ -1,14 +1,13 @@
-//importamos la libreria instalada dotenv para variables de entorno
-import 'dotenv/config';
-//importamos la app
-import app from './app.js';
-//Creamos un puerto y como no sabemos el puerto que vamos a utilizar vamos a hacer que si la variable de entorno PORT tiene algo que use ese puerto y si no que use el 3000
-const port = process.env.PORT || 3000;
+import 'dotenv/config'; // Importamos el módulo dotenv para cargar variables de entorno desde el archivo .env
+import app from './app.js'; // Importamos la instancia de la aplicación Express desde el archivo app.js
 
-//Iniciamos la escucha del servidor
+const port = process.env.PORT || 3000; // Definimos el puerto en el que el servidor escuchará. Se usa el valor del puerto especificado en las variables de entorno o el puerto 3000 por defecto
+
+// Iniciamos el servidor en el puerto especificado
 const server = app.listen(port, () => {
-  console.log(`Environment: ${process.env.NODE_ENV}`);//para que esto funcione tenemos que instalar cross-env
-  console.log(`Server is running on port http://localhost:${port}`)
+  // Cuando el servidor se inicia correctamente, se ejecuta esta función
+  console.log(`Environment: ${process.env.NODE_ENV}`); // Mostramos el entorno en el que se está ejecutando la aplicación (desarrollo, prueba, producción, etc.)
+  console.log(`Server is running on port http://localhost:${port}`); // Mostramos la URL en la que el servidor está corriendo
 });
-//vamos a exportar el server para cuando hagamos test
-export default server;
+
+export default server; // Exportamos la instancia del servidor para que pueda ser utilizada en otros archivos, si es necesario

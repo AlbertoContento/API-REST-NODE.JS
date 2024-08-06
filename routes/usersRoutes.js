@@ -1,78 +1,84 @@
-//Guardamos las routes de los Users
-//importamos el framework express y bcrypt y jwt y el modelo usuario
-import express from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
-//Accedemos a express.Router()
-const router = express.Router();
-//POST API/USERS/SIGNUP
+import express from 'express'; // Importamos el módulo express
+import bcrypt from 'bcrypt'; // Importamos bcrypt para manejar la encriptación de contraseñas
+import jwt from 'jsonwebtoken'; // Importamos jsonwebtoken para generar y verificar tokens
+import User from '../models/user.js'; // Importamos el modelo User
+
+const router = express.Router(); // Creamos una instancia de Router de Express
+
+// Ruta POST para registrar un nuevo usuario
 router.post('/signup', async (req, res) => {
-  //comprobamos que el usuario no este resgistrado
-  let user;
-  user = await User.findOne({ email: req.body.email});//buscamos el email en nuestra BD
-  //si el user esta registrado ->error y mensaje
-  if (user) return res.status(400).send('User already registered.');
-  //Si no existe cojemos los datos de registro y creamos un usuario nuevo
-  user = new User({
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    role: req.body.role,
-  });
-  //manejamos los errores
   try {
-    await user.save();//guardamos los datos del user
-    //creamos el token
+    // Verificamos si el usuario ya está registrado buscando por su email
+    let user = await User.findOne({ email: req.body.email });
+    if (user) return res.status(400).send('User already registered.');
+
+    // Si el usuario no existe, creamos un nuevo usuario con los datos del request
+    user = new User({
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password,
+      role: req.body.role || 'user', // Si no se proporciona un rol, se asigna 'user' por defecto
+    });
+
+    // Guardamos el nuevo usuario en la base de datos
+    await user.save();
+
+    // Generamos un token JWT para el usuario
     const token = jwt.sign(
       {
-        _id: user._id,
-        role: user.role,
-      //le pasamos la palabra clave 
-      }, 
-      process.env.JWT_SECRET, 
+        _id: user._id, // ID del usuario
+        role: user.role, // Rol del usuario
+      },
+      process.env.JWT_SECRET, // Clave secreta para firmar el token (debe estar en las variables de entorno)
       {
-        expiresIn: '1h',//el token para que el usuario realice peticiones al servidor sera de 1 hora
-      });
-    //cuando todo este correcto le mandamos la respuesta que contiene authorization, el token y le mandame mensaje con los datos almacenados en la BD
-    res
-      .status(201)
-      .header('Authorization', token)
-      .json({
-        user: {
-          user: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        token,
-      });
+        expiresIn: '1h', // El token expirará en 1 hora
+      }
+    );
+
+    // Respondemos con el nuevo usuario y el token en los headers
+    res.status(201).header('Authorization', token).json({
+      user: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
   } catch (error) {
-    res.status(500).send("Something went wrong" + error.message);//500 error de servidor
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).send("Something went wrong: " + error.message);
   }
 });
-//POST API/USERS/LOGIN
-router.post("/login", async (req, res) => {
-  const user = await User.findOne({ email: req.body.email});//buscamos el email en BD
-  //Si el email no existe 
-  if (!user) return res.status(400).send("Invalid email or Password.");
-  //VAlidamos la contraseña
-  const validPassword = await bcrypt.compare(req.body.password, user.password);//aqui comparamos la contraseña guardada en BD y la contraseña que nos introduce el user
-  //si la contraseña no es valida
-  if (!validPassword) return res.status(400).send("Invalid email or Password.");
-  //creamos el token
-  const token = jwt.sign(
-    {
-      _id: user._id,
-      role: user.role,
-    //le pasamos la palabra clave 
-    }, 
-    process.env.JWT_SECRET, 
-    {
-      expiresIn: "1h",//el token para que el usuario realice peticiones al servidor sera de 1 hora
-    }
-  );
-  //Cuando el user este bien logeado le devolvemos el token
-  res.status(200).header("Authorization", token).json({ token: token });
+
+// Ruta POST para iniciar sesión-->POST API/USERS/LOGIN
+router.post('/login', async (req, res) => {
+  try {
+    // Buscamos el usuario por su email
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(400).send("Invalid email or Password.");
+
+    // Comparamos la contraseña proporcionada con la almacenada en la base de datos
+    const validPassword = await bcrypt.compare(req.body.password, user.password);
+    if (!validPassword) return res.status(400).send("Invalid email or Password.");
+
+    // Generamos un token JWT para el usuario
+    const token = jwt.sign(
+      {
+        _id: user._id, // ID del usuario
+        role: user.role, // Rol del usuario
+      },
+      process.env.JWT_SECRET, // Clave secreta para firmar el token (debe estar en las variables de entorno)
+      {
+        expiresIn: '1h', // El token expirará en 1 hora
+      }
+    );
+
+    // Respondemos con el token en los headers
+    res.status(200).header('Authorization', token).json({ token });
+  } catch (error) {
+    // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
+    res.status(500).send("Something went wrong: " + error.message);
+  }
 });
-//exportamos el objeto router
-export default router;
+
+export default router; // Exportamos el router para usarlo en otros archivos
