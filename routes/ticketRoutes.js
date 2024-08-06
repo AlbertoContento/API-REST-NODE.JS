@@ -5,13 +5,32 @@ import admin from '../middlewares/admin.js'; // Importamos el middleware de auto
 
 const router = express.Router(); // Creamos una instancia de Router de Express
 
-// Ruta GET para obtener todos los tickets
+// Ruta GET para obtener todos los tickets-->GET /api/tickets?pages=1Size=30
 router.get('/', async (req, res) => {
-  try {
-    // Buscamos todos los tickets en la base de datos
-    const tickets = await Ticket.find({});
-    // Respondemos con los tickets encontrados
-    res.status(200).json({ tickets });
+    // Obtiene el tamaño de la página de la query (parámetro pageSize) y si no está presente, establece el tamaño de la página en 10
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    // Obtiene el número de página de la query (parámetro page) y si no está presente, establece el número de página en 1
+    const page = parseInt(req.query.page) || 1;
+  
+    try {
+      // Buscamos todos los tickets en la base de datos
+      const tickets = await Ticket.find()
+        // Omitimos los registros según el número de página y el tamaño de la página
+        .skip((page - 1) * pageSize)
+        // Limitamos el número de registros devueltos al tamaño de la página
+        .limit(pageSize);
+    
+      // Contamos el número total de documentos (tickets) en la base de datos
+      const total = await Ticket.countDocuments();
+    
+      // Respondemos con los tickets encontrados
+      res.status(200).json({
+        tickets, // Los tickets encontrados en la base de datos
+        page, // El número de la página actual
+        pages: Math.ceil(total / pageSize), // El número total de páginas calculado
+        currentPage: page, // El número de la página actual (redundante con 'page', pero claro para el cliente)
+      });
+    
   } catch (err) {
     // Si ocurre un error, respondemos con un mensaje de error 500 (Error del servidor)
     res.status(500).send({ message: "Error del servidor: " + err.message });
