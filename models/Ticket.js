@@ -11,7 +11,8 @@ const  ticketSchema = new mongoose.Schema({
   createdAt: {type: Date, default: Date.now},
   status: { type: String, enum: ['open', 'in-progress', 'closed'], default: 'open'},
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low'},
-  title: { type: String, required: true}
+  title: { type: String, required: true},
+  description: { type: String, required: false },
 }, {
   toJSON: {
     transform: function(doc, ret) {

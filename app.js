@@ -1,35 +1,48 @@
-//importamos la libreria instalada dotenv
+// Importamos la librería instalada dotenv
 import 'dotenv/config';
-//importamos express de la biblioteca express
+// Importamos express de la biblioteca express
 import express from 'express';
-//importamos libreria morgan
+// Importamos librería morgan
 import morgan from 'morgan';
-//importamos mongoose para conectarnos a nuestra BD
+// Importamos mongoose para conectarnos a nuestra BD
 import mongoose from 'mongoose';
-//importamos la routes
+// Importamos las routes
 import usersRoutes from './routes/usersRoutes.js';
-//Creamos la app
+import ticketRoutes from './routes/ticketRoutes.js';
+
+// Creamos la app
 const app = express();
-//Le pasamos la url para que se conecte si estamos en test a ticketing-db-test y si no que mire si hay una BD en las variables de entorno y sino que se conecte a la local ticketing-db
+
+// URL para conexión a la base de datos
 const DB_URL = process.env.NODE_ENV === 'test'
   ? 'mongodb://localhost:27017/ticketing-db-test'
   : process.env.DB_URL || "mongodb://localhost:27017/ticketing-db";
-//conectamos la base de datos a nuestra url mediante una promesa
+
+// Conectamos la base de datos a nuestra URL mediante una promesa
 mongoose
-  .connect(DB_URL)
+  .connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log(`Connected to BD: ${DB_URL}`))
-  .catch((err) => console.error("FAiled to connect to MongoDB", err));
-//MIDELWARE para logearse
-app.use(morgan("dev"));//le decimos donde queremos que se ejecute(dev)
-//MIDELWARE para que los datos del usuario se conviertan en datos que el servidor pueda leer
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB", err);
+    process.exit(1); // Termina el proceso si la conexión falla
+  });
+
+// Middleware para loguearse
+app.use(morgan("dev")); // Le decimos donde queremos que se ejecute (dev)
+
+// Middleware para que los datos del usuario se conviertan en datos que el servidor pueda leer
 app.use(express.json());
-//Creamos nuestra primera ruta y los verbos utilizados son 4 get(leer datos), post(enviar datos), put(actualizar datos) y delete(borrar)
+
+// Creamos nuestra primera ruta y los verbos utilizados son 4: get (leer datos), post (enviar datos), put (actualizar datos) y delete (borrar)
 app.get('/ping', (req, res) => {
   res.status(200).send("pong");
 });
-//IMPORTAMOS LAS ROUTAS para login y signup
+
+// IMPORTAMOS LAS ROUTAS para login y signup
 app.use("/api/users", usersRoutes);
-//exportamos la app
+// IMPORTAMOS LAS ROUTAS para ticket
+app.use("/api/tickets", ticketRoutes);
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
@@ -38,4 +51,6 @@ app.use((err, req, res, next) => {
   }
   next();
 });
+
+// Exportamos la app
 export default app;
