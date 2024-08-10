@@ -4,6 +4,7 @@ import morgan from 'morgan'; // Importamos morgan para el registro de solicitude
 import mongoose from 'mongoose'; // Importamos mongoose para manejar la base de datos MongoDB
 import usersRoutes from './routes/usersRoutes.js'; // Importamos las rutas para manejar usuarios
 import ticketRoutes from './routes/ticketRoutes.js'; // Importamos las rutas para manejar tickets
+import error from './middlewares/error.js'; // Importamos el middleware error.js
 
 const app = express(); // Creamos una instancia de la aplicación Express
 
@@ -14,7 +15,7 @@ const DB_URL = process.env.NODE_ENV === 'test'
 
 // Conectamos a la base de datos MongoDB usando mongoose
 mongoose
-  .connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(DB_URL)
   .then(() => console.log(`Connected to DB: ${DB_URL}`)) // Si la conexión es exitosa, mostramos un mensaje
   .catch((err) => {
     console.error("Failed to connect to MongoDB", err); // Si ocurre un error, lo mostramos en consola
@@ -24,9 +25,13 @@ mongoose
 app.use(morgan("dev")); // Usamos morgan para registrar las solicitudes HTTP en modo de desarrollo
 app.use(express.json()); // Usamos express.json() para parsear los cuerpos de las solicitudes en formato JSON
 
-// Ruta de prueba para verificar que el servidor está funcionando
+// Rutas de prueba y otras rutas de la aplicación
 app.get('/ping', (req, res) => {
   res.status(200).send("pong"); // Responde con "pong" cuando se accede a /ping
+});
+
+app.get('/test-error', (req, res) => {
+  throw new Error('This is a test error'); // Lanza un error para activar el middleware de errores
 });
 
 // Configuramos las rutas para los usuarios y tickets
@@ -41,5 +46,8 @@ app.use((err, req, res, next) => {
   }
   next(); // Pasamos el control al siguiente middleware si el error no es un error de sintaxis
 });
+
+// Middleware para manejar los mensajes de errores
+app.use(error);
 
 export default app; // Exportamos la instancia de la aplicación para usarla en otros archivos
