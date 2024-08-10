@@ -1,6 +1,10 @@
 import 'dotenv/config'; // Importamos las variables de entorno desde el archivo .env
 import express from 'express'; // Importamos el módulo express para manejar el servidor web
 import morgan from 'morgan'; // Importamos morgan para el registro de solicitudes HTTP
+import helmet from 'helmet';// Importa el middleware 'helmet' para mejorar la seguridad de la aplicación.
+import cors from 'cors';// Importa el middleware 'cors' para manejar solicitudes de recursos entre diferentes dominios.
+import compression from 'compression';// Importa el middleware 'compression' para comprimir las respuestas HTTP y mejorar el rendimiento.
+import rateLimit from 'express-rate-limit'; // Importa el middleware 'express-rate-limit' para limitar la cantidad de solicitudes que un cliente puede hacer en un periodo de tiempo.
 import mongoose from 'mongoose'; // Importamos mongoose para manejar la base de datos MongoDB
 import usersRoutes from './routes/usersRoutes.js'; // Importamos las rutas para manejar usuarios
 import ticketRoutes from './routes/ticketRoutes.js'; // Importamos las rutas para manejar tickets
@@ -23,6 +27,13 @@ mongoose
   });
 
 app.use(morgan("dev")); // Usamos morgan para registrar las solicitudes HTTP en modo de desarrollo
+app.use(helmet()); // Activa y configura automáticamente varias medidas de seguridad HTTP en tu aplicación.
+app.use(cors()); // Habilita CORS en tu aplicación, permitiendo solicitudes desde otros dominios o orígenes.
+if (process.env.NODE_ENV === "prod") {
+  app.use(compression());
+  app.use(rateLimit)
+}
+
 app.use(express.json()); // Usamos express.json() para parsear los cuerpos de las solicitudes en formato JSON
 
 // Rutas de prueba y otras rutas de la aplicación

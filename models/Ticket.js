@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
 const ticketSchema = new mongoose.Schema({
-  id: { type: String, default: uuidv4, required: true, unique: true },
+  id: { type: String, required: true, unique: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
   status: { type: String, enum: ['open', 'in-progress', 'closed'], default: 'open' },
